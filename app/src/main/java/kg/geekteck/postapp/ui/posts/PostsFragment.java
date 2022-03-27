@@ -1,5 +1,7 @@
 package kg.geekteck.postapp.ui.posts;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 
 import java.util.List;
@@ -24,7 +25,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class PostsFragment extends Fragment implements Click{
+public class PostsFragment extends Fragment implements Click {
     private FragmentPostsBinding binding;
     private PostAdapter adapter;
     private NavHostFragment navHostFragment;
@@ -41,6 +42,7 @@ public class PostsFragment extends Fragment implements Click{
                 .getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
         controller= navHostFragment.getNavController();
+        //binding.swipe.setOnRefreshListener(this);
     }
 
     @Override
@@ -62,6 +64,10 @@ public class PostsFragment extends Fragment implements Click{
             }
         });
 
+        getPosts();
+    }
+
+    private void getPosts() {
         App.api.getPosts().enqueue(new Callback<List<Post>>() {
             @Override
             public void onResponse(@NonNull Call<List<Post>> call,
@@ -79,33 +85,45 @@ public class PostsFragment extends Fragment implements Click{
     }
 
     @Override
-    public void simple_click(int userId) {
+    public void simple_click(Post post) {
         Bundle bundle = new Bundle();
-        bundle.putInt("id", userId);
+        bundle.putInt("id", post.getId());
+        bundle.putString("title", post.getTitle());
+        bundle.putString("content", post.getContent());
         controller.navigate(R.id.action_postsFragment_to_formFragment, bundle);
     }
 
     @Override
     public void long_click(int userId) {
         System.out.println("long "+ userId);
-        App.api.deletePost(userId).enqueue(new Callback<ResponseBody>() {
+        alert(userId);
+    }
+
+    private void alert(int userid) {
+        AlertDialog.Builder alert = new AlertDialog.Builder(requireContext());
+        alert.setTitle("Хотите удалить пост?");
+        alert.setPositiveButton("Да удалить", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                deletePost(userid);
+            }
+        });
+        alert.setNegativeButton("Передумал удалят", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                getPosts();
+            }
+        });
+        alert.setCancelable(true);
+        alert.show();
+    }
+
+    private void deletePost(int userid) {
+        App.api.deletePost(userid).enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 if (response.isSuccessful() && response.body()!=null){
-                    App.api.getPosts().enqueue(new Callback<List<Post>>() {
-                        @Override
-                        public void onResponse(@NonNull Call<List<Post>> call,
-                                               @NonNull Response<List<Post>> response) {
-                            if (response.isSuccessful() && response.body() !=null){
-                                adapter.setPosts(response.body());
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(@NonNull Call<List<Post>> call, @NonNull Throwable t) {
-
-                        }
-                    });
+                    getPosts();
                 }
             }
 

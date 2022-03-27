@@ -48,7 +48,8 @@ public class FormFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         Bundle bundle = getArguments();
-        System.out.println("----------------------------"+bundle.isEmpty());
+        binding.etTitle.setText(bundle.getString("title"));
+        binding.etContent.setText(bundle.getString("content"));
 
         binding.btnSend.setText(bundle.isEmpty() ? "Send" : "Update");
 
@@ -60,15 +61,13 @@ public class FormFragment extends Fragment {
                     post();
                 }else {
                     int id = bundle.getInt("id");
-                    System.out.println("----------=======------"+id);
-                    put(id);
+                    put(bundle);
                 }
             }
         });
     }
 
     private void post() {
-        System.out.println("+++++++++++++++++++++++post");
         String title = binding.etTitle.getText().toString();
         String content = binding.etContent.getText().toString();
 
@@ -80,21 +79,21 @@ public class FormFragment extends Fragment {
         );
         App.api.createPost(post).enqueue(new Callback<Post>() {
             @Override
-            public void onResponse(@NonNull Call<Post> call, Response<Post> response) {
+            public void onResponse(@NonNull Call<Post> call, @NonNull Response<Post> response) {
                 if (response.isSuccessful()){
                     requireActivity().onBackPressed();
                 }
             }
 
             @Override
-            public void onFailure(Call<Post> call, Throwable t) {
+            public void onFailure(@NonNull Call<Post> call, @NonNull Throwable t) {
 
             }
         });
     }
 
     @SuppressLint("SetTextI18n")
-    private void put(int bundle) {
+    private void put(Bundle bundle) {
         binding.btnSend.setText("Update");
         String title = binding.etTitle.getText().toString();
         String content = binding.etContent.getText().toString();
@@ -105,16 +104,17 @@ public class FormFragment extends Fragment {
                 USER_ID,
                 GROUP_ID
         );
-        App.api.updateDate(bundle, post).enqueue(new Callback<ResponseBody>() {
+
+        App.api.updateDate(bundle.getInt("id"), post).enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+            public void onResponse(@NonNull Call<ResponseBody> call, @NonNull Response<ResponseBody> response) {
                 if (response.isSuccessful()){
                     requireActivity().onBackPressed();
                 }
             }
 
             @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
+            public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
 
             }
         });
